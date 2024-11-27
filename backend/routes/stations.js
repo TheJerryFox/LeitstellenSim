@@ -1,6 +1,6 @@
 const express = require('express');
 const Station = require('../models/Station');
-const Vehicle = require('../models/Vehicle'); // Fahrzeuge importieren
+const Vehicle = require('../models/Vehicle');
 
 module.exports = (io) => {
     const router = express.Router();

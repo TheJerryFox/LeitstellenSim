@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Vehicle = require('../models/Vehicle');
-const Station = require('../models/Station'); // Import der Wachen
+const Station = require('../models/Station');
 
 module.exports = (io) => {
     router.get('/', async (req, res) => {
@@ -16,7 +16,6 @@ module.exports = (io) => {
     router.post('/', async (req, res) => {
         try {
             const { stationId, ...vehicleData } = req.body;
-            // Wache abrufen
             const station = await Station.findById(stationId);
             if (!station) {
                 return res.status(404).json({ error: 'Wache nicht gefunden' });
@@ -24,7 +23,7 @@ module.exports = (io) => {
 
             const vehicle = new Vehicle({
                 ...vehicleData,
-                location: station.location, // Standort der Wache als Fahrzeugposition setzen
+                location: station.location,
             });
 
             await vehicle.save();
@@ -45,8 +44,6 @@ module.exports = (io) => {
             if (!vehicle) {
                 return res.status(404).json({ error: 'Fahrzeug nicht gefunden' });
             }
-    
-            // Aktualisierte Fahrzeugdaten über WebSocket senden
             const vehicles = await Vehicle.find();
             io.emit('updateVehicles', vehicles);
     
@@ -66,7 +63,6 @@ module.exports = (io) => {
                 return res.status(404).json({ error: 'Fahrzeug nicht gefunden' });
             }
 
-            // Fahrzeug löschen
             await Vehicle.findByIdAndDelete(vehicleId);
             io.emit('updateVehicles', await Vehicle.find());
             res.status(200).json({ message: 'Fahrzeug erfolgreich gelöscht' });

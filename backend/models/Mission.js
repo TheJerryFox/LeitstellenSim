@@ -9,6 +9,7 @@ const missionSchema = new mongoose.Schema({
   },
   requiredVehicles: [{ type: String }],
   assignedVehicles: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Vehicle' }],
+  callerText: { type: String },
   status: { type: String, default: 'offen' },
 });
 

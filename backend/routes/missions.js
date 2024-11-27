@@ -1,61 +1,34 @@
 const express = require('express');
 const Mission = require('../models/Mission');
-const Station = require('../models/Station');
-
-function generateRandomLocation(center, radius) {
-    const y0 = center.latitude;
-    const x0 = center.longitude;
-    const rd = radius / 111.32;
-
-    const u = Math.random();
-    const v = Math.random();
-    const w = rd * Math.sqrt(u);
-    const t = 2 * Math.PI * v;
-    const x = w * Math.cos(t);
-    const y = w * Math.sin(t);
-
-    return { latitude: y + y0, longitude: x + x0 };
-}
+const missionScheduler = require("../missionScheduler");
 
 module.exports = (io) => {
     const router = express.Router();
 
+    const { generateMissionsManually } = missionScheduler(io);
+
     router.post('/generate', async (req, res) => {
         try {
             const { wacheId, anzahl } = req.body;
-
-            const wache = await Station.findById(wacheId);
-            if (!wache) {
-                return res.status(404).json({ error: 'Wache nicht gefunden' });
+    
+            if (!wacheId || !anzahl) {
+                return res.status(400).json({ error: 'WacheId und Anzahl sind erforderlich.' });
             }
-
-            const missionType = wache.type === 'Rettungsdienst' ? 'Rettung' : wache.type;
-            const vehicleRequirements = {
-                Feuerwehr: ['LF', 'DLK', 'RW'],
-                Rettung: ['RTW', 'NEF'],
-                Polizei: ['Streifenwagen'],
-            };
-
-            const radius = 20;
-            const missions = [];
-            for (let i = 0; i < anzahl; i++) {
-                missions.push({
-                    description: `${missionType}-Einsatz ${i + 1}`,
-                    location: generateRandomLocation(wache.location, radius),
-                    type: missionType,
-                    requiredVehicles: vehicleRequirements[missionType],
-                });
+    
+            const status = await generateMissionsManually(wacheId, anzahl);
+            if (status === 404) {
+                return res.status(404).json({ error: 'Wache nicht gefunden.' });
+            } else if (status === 500) {
+                return res.status(500).json({ error: 'Fehler beim Generieren der Einsätze.' });
             }
-
-            const createdMissions = await Mission.insertMany(missions);
-
-            io.emit('updateMissions', await Mission.find());
-            res.status(201).json(createdMissions);
+    
+            res.status(201).json({ message: `${anzahl} Einsätze erfolgreich generiert.` });
         } catch (error) {
             console.error('Fehler beim Generieren der Einsätze:', error);
             res.status(500).json({ error: 'Fehler beim Generieren der Einsätze' });
         }
     });
+    
 
     router.patch('/:id', async (req, res) => {
         try {
@@ -67,7 +40,6 @@ module.exports = (io) => {
                 return res.status(404).json({ error: 'Einsatz nicht gefunden' });
             }
     
-            // Aktualisierte Einsätze über WebSocket senden
             const missions = await Mission.find();
             io.emit('updateMissions', missions);
             res.json(mission);

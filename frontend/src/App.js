@@ -14,12 +14,12 @@ function App() {
   return (
     <div className="App">
       <div className="layout">
-        {/* Kartenbereich */}
+        {}
         <div className="map-section">
           <MapComponent />
         </div>
 
-        {/* Umschaltbare rechte Sektion */}
+        {}
         <div className="details-section">
           <div className="tabs">
             <button
@@ -50,7 +50,7 @@ function App() {
               className={activeTab === 'generator' ? 'active' : ''}
               onClick={() => setActiveTab('generator')}
             >
-              Mission Generator
+              Optionen 🐾
             </button>
           </div>
 
@@ -58,10 +58,9 @@ function App() {
             {selectedMission ? (
               <MissionDetail
                 mission={selectedMission}
-                onClose={() => setSelectedMission(null)} // Zurück zur Liste
+                onClose={() => setSelectedMission(null)} 
               />
             ) : (
-              // Tabs anzeigen
               <>
                 {activeTab === 'stations' && <StationManagement />}
                 {activeTab === 'missions' && (

@@ -7,7 +7,7 @@ function StationManagement() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const socket = io(process.env.REACT_APP_URL);
+        const socket = io(process.env.REACT_APP_URL, { autoConnect: false });
 
         axios.get('http://localhost:5000/api/stations')
         .then((response) => {
@@ -19,9 +19,7 @@ function StationManagement() {
             setIsLoading(false);
         });
 
-        socket.on('updateStations', (updatedStations) => {
-            setStations(updatedStations);
-        });
+        socket.on('updateStations', (updatedStations) => setStations(updatedStations));
 
         return () => socket.disconnect();
     }, []);
@@ -43,19 +41,23 @@ function StationManagement() {
 
     return (
         <div>
-        <h2>Wachen</h2>
-        {isLoading ? (
-            <p>Wird geladen...</p>
-        ) : (
-            <ul>
-            {stations.map((station) => (
-                <li key={station._id}>
-                {station.name} ({station.type}) - Standort: {station.location.latitude}, {station.location.longitude}
-                <button onClick={() => deleteStation(station._id)}>Löschen</button>
-                </li>
-            ))}
-            </ul>
-        )}
+            {isLoading ? (
+                <p>Wird geladen...</p>
+            ) : (
+                <div className="station-list-container">
+                    {stations.map((station) => (
+                        <div className="station-item" key={station._id}>
+                            <strong>{station.name}</strong>
+                            <div className="details">
+                                {station.type}
+                                <br />
+                                Standort: {station.location.latitude}, {station.location.longitude}
+                            </div>
+                            <button onClick={() => deleteStation(station._id)}>Löschen</button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

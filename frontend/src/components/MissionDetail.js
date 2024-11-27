@@ -39,7 +39,6 @@ function MissionDetail({ mission, onClose }) {
             .catch(error => console.error(`Fehler beim Senden des Fahrzeugs ${vehicle.name}:`, error));
         });
     
-        // Aktualisiere den Einsatz mit den zugewiesenen Fahrzeugen
         axios.patch(`http://localhost:5000/api/missions/${mission._id}`, { 
             assignedVehicles: selectedVehicles.map(v => v._id),
             status: 'in Bearbeitung' 

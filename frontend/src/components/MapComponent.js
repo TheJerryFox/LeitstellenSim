@@ -1,11 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useEffect, useState, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import L from 'leaflet';
 import { io } from 'socket.io-client';
 
-// Standard-Icon für Marker
+const statusEmojis = {
+  1: '1️⃣',
+  2: '2️⃣',
+  3: '3️⃣',
+  4: '4️⃣',
+  5: '5️⃣',
+  6: '6️⃣',
+  7: '7️⃣',
+  8: '8️⃣',
+  0: '0️⃣',
+};
+
 const defaultIcon = new L.Icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   iconSize: [25, 41],
@@ -16,7 +27,6 @@ const defaultIcon = new L.Icon({
 });
 L.Marker.prototype.options.icon = defaultIcon;
 
-// Custom-Icons für unterschiedliche Typen
 const fireStationIcon = new L.Icon({
   iconUrl: '/icons/fire-station.png',
   iconSize: [30, 30],
@@ -47,13 +57,12 @@ const vehicleIcon = new L.Icon({
   iconAnchor: [15, 30],
 });
 
-// Funktion für die Routenberechnung
 async function getRoute(start, destination) {
   try {
     const response = await axios.get(
       `http://localhost:5001/route/v1/driving/${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`
     );
-    return response.data.routes[0]; // Rückgabe der Route
+    return response.data.routes[0];
   } catch (error) {
     console.error('Fehler beim Abrufen der Route:', error);
     return null;
@@ -63,70 +72,102 @@ async function getRoute(start, destination) {
 const movingVehicles = new Set();
 const routeCache = {};
 
-async function moveVehicle(vehicle, onUpdate) {
-    if (!vehicle.destination || movingVehicles.has(vehicle._id)) {
-        console.log(`${vehicle.name} im Set`);
-        return;
-    }
-
-    console.log(`Bewege ${vehicle.name}`);
-    movingVehicles.add(vehicle._id); // Fahrzeug als "in Bewegung" markieren
-    const cacheKey = `${vehicle._id}-${vehicle.destination}`;
-    let coordinates;
-    let destination; // Hier destination definieren
-
-    try {
-        if (routeCache[cacheKey]) {
-            coordinates = routeCache[cacheKey];
-        } else {
-            const destinationDetails = await axios.get(`http://localhost:5000/api/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`);
-            destination = destinationDetails.data.location; // Ziel hier setzen
-
-            const route = await getRoute(vehicle.location, destination);
-            if (!route) {
-                console.error(`Route für Fahrzeug ${vehicle.name} konnte nicht abgerufen werden.`);
-                movingVehicles.delete(vehicle._id);
-                return;
-            }
-
-            coordinates = route.geometry.coordinates;
-            routeCache[cacheKey] = coordinates;
-        }
-
-        let index = 0;
-
-        const interval = setInterval(() => {
-            if (index >= coordinates.length - 1) {
-                clearInterval(interval);
-                vehicle.status = vehicle.destinationType === 'Mission' ? 4 : 2; // Ziel erreicht
-                vehicle.location = destination; // Zielkoordinaten setzen
-                vehicle.destination = null; // Ziel zurücksetzen
-                axios.patch(`http://localhost:5000/api/vehicles/${vehicle._id}`, {
-                    status: vehicle.status,
-                    location: vehicle.location,
-                    destination: null,
-                });
-                delete routeCache[cacheKey];
-                onUpdate(vehicle);
-                movingVehicles.delete(vehicle._id); // Entferne Fahrzeug aus Set
-                return;
-            }
-            const nextPosition = coordinates[index];
-            vehicle.location = { latitude: nextPosition[1], longitude: nextPosition[0] };
-            onUpdate(vehicle);
-
-            index++;
-        }, 1000);
-    } catch (error) {
-        console.error(`Fehler bei der Bewegung des Fahrzeugs ${vehicle.name}:`, error);
-        movingVehicles.delete(vehicle._id); // Entferne Fahrzeug aus Set bei Fehler
-    }
-}
-
-function MapComponent() {
+const MapComponent = () => {
   const [stations, setStations] = useState([]);
   const [missions, setMissions] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [routeData, setRouteData] = useState({ fullRoute: [], traveledRoute: [] });
+
+  const moveVehicle = useCallback(async (vehicle, onUpdate) => {
+    if (!vehicle.destination || movingVehicles.has(vehicle._id)) return;
+
+    movingVehicles.add(vehicle._id);
+    const cacheKey = `${vehicle._id}-${vehicle.destination}`;
+    let coordinates;
+    let destination;
+
+    try {
+      if (routeCache[cacheKey]) {
+        coordinates = routeCache[cacheKey];
+        destination = {
+          latitude: coordinates[coordinates.length - 1][1],
+          longitude: coordinates[coordinates.length - 1][0],
+        };
+      } else {
+        const destinationDetails = await axios.get(
+          `http://localhost:5000/api/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`
+        );
+        destination = destinationDetails.data.location;
+
+        const route = await getRoute(vehicle.location, destination);
+        if (!route) {
+          console.error(`Route für Fahrzeug ${vehicle.name} konnte nicht abgerufen werden.`);
+          movingVehicles.delete(vehicle._id);
+          return;
+        }
+
+        coordinates = route.geometry.coordinates;
+        routeCache[cacheKey] = coordinates;
+      }
+
+      let index = 0;
+
+      const interval = setInterval(() => {
+        if (index >= coordinates.length - 1) {
+          clearInterval(interval);
+          vehicle.status = vehicle.destinationType === 'Mission' ? 4 : 2;
+          vehicle.location = destination;
+          vehicle.destination = null;
+          axios.patch(`http://localhost:5000/api/vehicles/${vehicle._id}`, {
+            status: vehicle.status,
+            location: vehicle.location,
+            destination: null,
+          });
+          delete routeCache[cacheKey];
+          onUpdate(vehicle);
+          movingVehicles.delete(vehicle._id);
+          return;
+        }
+        const nextPosition = coordinates[index];
+        vehicle.location = { latitude: nextPosition[1], longitude: nextPosition[0] };
+
+        if (selectedVehicle?._id === vehicle._id) {
+          setRouteData((prev) => ({
+            fullRoute: prev.fullRoute.slice(index + 1),
+            traveledRoute: [...prev.traveledRoute, prev.fullRoute[index]],
+          }));
+        }
+
+        onUpdate(vehicle);
+
+        index++;
+      }, 1000);
+    } catch (error) {
+      console.error(`Fehler bei der Bewegung des Fahrzeugs ${vehicle.name}:`, error);
+      movingVehicles.delete(vehicle._id);
+    }
+  }, [selectedVehicle]);
+
+  const toggleRoute = async (vehicle) => {
+    if (selectedVehicle?._id === vehicle._id) {
+      setSelectedVehicle(null);
+      setRouteData({ fullRoute: [], traveledRoute: [] });
+    } else {
+      setSelectedVehicle(vehicle);
+      if (vehicle.destination) {
+        const destinationDetails = await axios.get(
+          `http://localhost:5000/api/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`
+        );
+        const destination = destinationDetails.data.location;
+
+        const route = await getRoute(vehicle.location, destination);
+        if (route) {
+          setRouteData({ fullRoute: route.geometry.coordinates, traveledRoute: [] });
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     const socket = io(process.env.REACT_APP_URL);
@@ -135,15 +176,18 @@ function MapComponent() {
     socket.on('updateMissions', (data) => setMissions(data));
     socket.on('updateVehicles', (data) => setVehicles(data));
 
-    axios.get(`${process.env.REACT_APP_API_URL}/stations`)
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/stations`)
       .then((response) => setStations(response.data))
       .catch((error) => console.error('Fehler beim Abrufen der Wachen:', error));
 
-    axios.get(`${process.env.REACT_APP_API_URL}/missions`)
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/missions`)
       .then((response) => setMissions(response.data))
       .catch((error) => console.error('Fehler beim Abrufen der Einsätze:', error));
 
-    axios.get(`${process.env.REACT_APP_API_URL}/vehicles`)
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/vehicles`)
       .then((response) => setVehicles(response.data))
       .catch((error) => console.error('Fehler beim Abrufen der Fahrzeuge:', error));
 
@@ -160,7 +204,7 @@ function MapComponent() {
         });
       }
     });
-  }, [vehicles]);
+  }, [vehicles, moveVehicle]);
 
   return (
     <MapContainer center={[49.6425, 11.2537]} zoom={13} style={{ height: '600px', width: '100%' }}>
@@ -200,23 +244,33 @@ function MapComponent() {
           </Popup>
         </Marker>
       ))}
-      {vehicles
-        .filter((vehicle) => vehicle.destination) // Nur Fahrzeuge mit Ziel anzeigen
-        .map((vehicle) => (
-          <Marker
-            key={vehicle._id}
-            position={[vehicle.location.latitude, vehicle.location.longitude]}
-            icon={vehicleIcon}
-          >
-            <Popup>
-              {vehicle.name}
-              <br />
-              Ziel: {vehicle.destinationType}
-            </Popup>
-          </Marker>
-        ))}
+      {vehicles.filter((vehicle) => vehicle.destination).map((vehicle) => (
+        <Marker
+          key={vehicle._id}
+          position={[vehicle.location.latitude, vehicle.location.longitude]}
+          icon={vehicleIcon}
+        >
+          <Popup>
+            <strong>{vehicle.name}</strong>
+            <br />
+            Status {statusEmojis[vehicle.status]}
+            <br />
+            <button onClick={() => toggleRoute(vehicle)}>
+              {selectedVehicle?._id === vehicle._id ? 'Route ausblenden' : 'Route anzeigen'}
+            </button>
+          </Popup>
+        </Marker>
+      ))}
+      <Polyline
+        positions={routeData.traveledRoute.map((coord) => [coord[1], coord[0]])}
+        color="green"
+      />
+      <Polyline
+        positions={routeData.fullRoute.map((coord) => [coord[1], coord[0]])}
+        color="blue"
+      />
     </MapContainer>
   );
-}
+};
 
 export default MapComponent;

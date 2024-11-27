@@ -35,7 +35,6 @@ db.once('open', () => {
     console.log('Mit MongoDB verbunden');
 });
 
-// Routen-Importe
 const stationsRoute = require('./routes/stations')(io);
 const vehiclesRoute = require('./routes/vehicles')(io);
 const missionsRoute = require('./routes/missions')(io);
@@ -44,16 +43,13 @@ app.use('/api/stations', stationsRoute);
 app.use('/api/vehicles', vehiclesRoute);
 app.use('/api/missions', missionsRoute);
 
-// Scheduler für automatische Einsatzerstellung starten
-const startMissionScheduler = require('./missionScheduler')(io);
-startMissionScheduler(45000);
+const { startMissionScheduler } = require('./missionScheduler')(io);
+startMissionScheduler(15000);
 
-// Standard-Route für nicht gefundene Endpunkte
 app.use((req, res) => {
     res.status(404).json({ error: 'Route nicht gefunden' });
 });
 
-// Server starten
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`Server läuft auf Port ${PORT}`);

@@ -6,31 +6,27 @@ function MissionGenerator() {
   const [selectedStation, setSelectedStation] = useState('');
   const [missionCount, setMissionCount] = useState(1);
 
-  // Wachen abrufen
   useEffect(() => {
     axios.get('http://localhost:5000/api/stations').then((response) => {
       setStations(response.data);
     });
   }, []);
 
-  // Einsätze generieren
-  const generateMissions = () => {
+  const generateMissions = async () => {
     if (!selectedStation) {
         alert("Bitte eine Wache auswählen.");
         return;
-    }      
-    axios
-      .post('http://localhost:5000/api/missions/generate', {
-        wacheId: selectedStation,
-        anzahl: missionCount
-      })
-      .then((response) => {
-        alert(`${response.data.length} Einsätze erfolgreich generiert!`);
-      })
-      .catch((error) => {
+    }
+    try {
+        const response = await axios.post('http://localhost:5000/api/missions/generate', {
+            wacheId: selectedStation,
+            anzahl: missionCount,
+        });
+        alert(response.data.message);
+    } catch (error) {
         console.error('Fehler beim Generieren der Einsätze:', error.response?.data || error.message);
-        alert(`Fehler: ${error.response?.data?.details || error.message}`);
-      });
+        alert(`Fehler: ${error.response?.data?.error || error.message}`);
+    }
   };
 
   return (

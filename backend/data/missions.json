@@ -1,0 +1,31 @@
+[
+    {
+      "type": "Feuerwehr",
+      "name": "Wohnungsbrand",
+      "requiredVehicles": ["LF", "DLK", "RW"],
+      "callerText": "Hier ist die Feuerwehrleitstelle. Es wurde ein Wohnungsbrand gemeldet.",
+      "followUpProbability": 0.2
+    },
+    {
+      "type": "Rettungsdienst",
+      "name": "Herzinfarkt",
+      "requiredVehicles": ["RTW", "NEF"],
+      "callerText": "Ich glaube, mein Mann hat einen Herzinfarkt. Bitte schicken Sie Hilfe!",
+      "followUpProbability": 0.1
+    },
+    {
+        "type": "Rettungsdienst",
+        "name": "Sturz",
+        "requiredVehicles": ["RTW"],
+        "callerText": "Ich glaube, mein Mann hat einen Herzinfarkt. Bitte schicken Sie Hilfe!",
+        "followUpProbability": 0.1
+      },
+    {
+      "type": "Polizei",
+      "name": "Einbruch",
+      "requiredVehicles": ["Streifenwagen"],
+      "callerText": "Ich bin Nachbar, und ich sehe, wie jemand in das Haus nebenan einbricht.",
+      "followUpProbability": 0.05
+    }
+  ]
+  
