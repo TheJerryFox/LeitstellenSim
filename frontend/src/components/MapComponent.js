@@ -60,7 +60,7 @@ const vehicleIcon = new L.Icon({
 async function getRoute(start, destination) {
   try {
     const response = await axios.get(
-      `http://localhost:5001/route/v1/driving/${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`
+      `${process.env.REACT_APP_URL}/route/v1/driving/${start.longitude},${start.latitude};${destination.longitude},${destination.latitude}?overview=full&geometries=geojson`
     );
     return response.data.routes[0];
   } catch (error) {
@@ -96,7 +96,7 @@ const MapComponent = () => {
         };
       } else {
         const destinationDetails = await axios.get(
-          `http://localhost:5000/api/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`
+          `${process.env.REACT_APP_API_URL}/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`
         );
         destination = destinationDetails.data.location;
 
@@ -119,7 +119,7 @@ const MapComponent = () => {
           vehicle.status = vehicle.destinationType === 'Mission' ? 4 : 2;
           vehicle.location = destination;
           vehicle.destination = null;
-          axios.patch(`http://localhost:5000/api/vehicles/${vehicle._id}`, {
+          axios.patch(`${process.env.REACT_APP_API_URL}/vehicles/${vehicle._id}`, {
             status: vehicle.status,
             location: vehicle.location,
             destination: null,
@@ -157,7 +157,7 @@ const MapComponent = () => {
       setSelectedVehicle(vehicle);
       if (vehicle.destination) {
         const destinationDetails = await axios.get(
-          `http://localhost:5000/api/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`
+          `${process.env.REACT_APP_API_URL}/${vehicle.destinationType.toLowerCase()}s/${vehicle.destination}`
         );
         const destination = destinationDetails.data.location;
 
@@ -207,7 +207,7 @@ const MapComponent = () => {
   }, [vehicles, moveVehicle]);
 
   return (
-    <MapContainer center={[49.6425, 11.2537]} zoom={13} style={{ height: '600px', width: '100%' }}>
+    <MapContainer center={[49.45, 11.09]} zoom={13} style={{ height: '600px', width: '100%' }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="&copy; OpenStreetMap contributors"

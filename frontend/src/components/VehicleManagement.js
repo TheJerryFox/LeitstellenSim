@@ -22,7 +22,7 @@ function VehicleManagement({ toggleRoute, selectedVehicle }) {
     const socket = io(process.env.REACT_APP_URL, { autoConnect: false });
 
     axios
-      .get('http://localhost:5000/api/vehicles')
+      .get(`${process.env.REACT_APP_API_URL}/vehicles`)
       .then((response) => {
         setVehicles(response.data);
         setIsLoading(false);
@@ -40,7 +40,7 @@ function VehicleManagement({ toggleRoute, selectedVehicle }) {
   const deleteVehicle = (id) => {
     if (window.confirm('Möchtest du dieses Fahrzeug wirklich löschen?')) {
       axios
-        .delete(`http://localhost:5000/api/vehicles/${id}`)
+        .delete(`${process.env.REACT_APP_API_URL}/vehicles/${id}`)
         .then(() => {
           setVehicles((prevVehicles) => prevVehicles.filter((vehicle) => vehicle._id !== id));
         })

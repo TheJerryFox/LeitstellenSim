@@ -7,7 +7,7 @@ function MissionGenerator() {
   const [missionCount, setMissionCount] = useState(1);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/stations').then((response) => {
+    axios.get(`${process.env.REACT_APP_API_URL}/stations`).then((response) => {
       setStations(response.data);
     });
   }, []);
@@ -18,7 +18,7 @@ function MissionGenerator() {
         return;
     }
     try {
-        const response = await axios.post('http://localhost:5000/api/missions/generate', {
+        const response = await axios.post(`${process.env.REACT_APP_API_URL}/missions/generate`, {
             wacheId: selectedStation,
             anzahl: missionCount,
         });

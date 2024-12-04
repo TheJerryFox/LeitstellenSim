@@ -47,6 +47,7 @@ const { startMissionScheduler } = require('./missionScheduler')(io);
 startMissionScheduler(15000);
 
 app.use((req, res) => {
+    console.log(req)
     res.status(404).json({ error: 'Route nicht gefunden' });
 });
 

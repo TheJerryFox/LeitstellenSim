@@ -50,7 +50,7 @@ function App() {
               className={activeTab === 'generator' ? 'active' : ''}
               onClick={() => setActiveTab('generator')}
             >
-              Optionen 🐾
+              Optionen
             </button>
           </div>
 

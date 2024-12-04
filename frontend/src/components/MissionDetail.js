@@ -18,7 +18,7 @@ function MissionDetail({ mission, onClose }) {
     const [selectedVehicles, setSelectedVehicles] = useState([]);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/vehicles')
+        axios.get(`${process.env.REACT_APP_API_URL}/vehicles`)
             .then((response) => {
                 setVehicles(response.data);
             })
@@ -30,7 +30,7 @@ function MissionDetail({ mission, onClose }) {
     const dispatchVehicles = () => {
         selectedVehicles.forEach(vehicle => {
             console.log(`Mission ID ist ${mission._id}`)
-            axios.patch(`http://localhost:5000/api/vehicles/${vehicle._id}`, { 
+            axios.patch(`${process.env.REACT_APP_API_URL}/vehicles/${vehicle._id}`, { 
                 status: 3, 
                 destination: mission._id, 
                 destinationType: 'Mission' 
@@ -39,7 +39,7 @@ function MissionDetail({ mission, onClose }) {
             .catch(error => console.error(`Fehler beim Senden des Fahrzeugs ${vehicle.name}:`, error));
         });
     
-        axios.patch(`http://localhost:5000/api/missions/${mission._id}`, { 
+        axios.patch(`${process.env.REACT_APP_API_URL}/missions/${mission._id}`, { 
             assignedVehicles: selectedVehicles.map(v => v._id),
             status: 'in Bearbeitung' 
         })

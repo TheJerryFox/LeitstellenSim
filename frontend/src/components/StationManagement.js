@@ -9,7 +9,7 @@ function StationManagement() {
     useEffect(() => {
         const socket = io(process.env.REACT_APP_URL, { autoConnect: false });
 
-        axios.get('http://localhost:5000/api/stations')
+        axios.get(`${process.env.REACT_APP_API_URL}/stations`)
         .then((response) => {
             setStations(response.data);
             setIsLoading(false);
@@ -27,7 +27,7 @@ function StationManagement() {
     const deleteStation = (id) => {
         if (window.confirm('Möchtest du diese Wache wirklich löschen?')) {
         axios
-            .delete(`http://localhost:5000/api/stations/${id}`)
+            .delete(`${process.env.REACT_APP_API_URL}/stations/${id}`)
             .then(() => {
                 setStations(stations.filter((station) => station._id !== id));
                 alert('Wache erfolgreich gelöscht.');

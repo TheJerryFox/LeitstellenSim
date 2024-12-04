@@ -10,7 +10,7 @@ function MissionList({ onSelectMission }) {
     useEffect(() => {
         const socket = io(process.env.REACT_APP_URL, { autoConnect: false });
         
-        axios.get('http://localhost:5000/api/missions')
+        axios.get(`${process.env.REACT_APP_API_URL}/missions`)
             .then((response) => {
                 setMissions(response.data);
                 setIsLoading(false);
@@ -20,7 +20,7 @@ function MissionList({ onSelectMission }) {
                 setIsLoading(false);
             });
 
-        axios.get('http://localhost:5000/api/vehicles')
+        axios.get(`${process.env.REACT_APP_API_URL}/vehicles`)
             .then((response) => {
                 setVehicles(response.data);
             })

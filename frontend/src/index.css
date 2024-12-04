@@ -113,7 +113,6 @@ table tr:nth-child(even) {
 
 .mission-list-container,
 .station-list-container {
-    max-height: 400px; 
     overflow-y: auto; 
     padding: 10px;
 }
