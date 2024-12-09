@@ -1,0 +1,11 @@
+version: '3.7'
+services:
+  osrm:
+    image: osrm/osrm-backend
+    container_name: osrm-backend
+    ports:
+      - "5000:5000"
+    command: >
+      osrm-routed /data/germany-latest.osrm
+    volumes:
+      - ./osrm_data:/data
